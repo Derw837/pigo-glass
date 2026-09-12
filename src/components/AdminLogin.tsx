@@ -1,0 +1,6 @@
+'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/browser'
+import { BRAND_SHORT } from '@/lib/brand'
+export default function AdminLogin(){const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [error,setError]=useState('');const [busy,setBusy]=useState(false);const router=useRouter();async function submit(e:React.FormEvent){e.preventDefault();setBusy(true);setError('');const s=createClient();const {error}=await s.auth.signInWithPassword({email,password});if(error)setError('Correo o contraseña incorrectos.');else{router.push('/admin');router.refresh()}setBusy(false)}return <div className="login-wrap"><div className="card login-card"><div className="brand">{BRAND_SHORT} <span>STUDIO</span></div><h1>Administración</h1><p style={{color:'#6b716e'}}>Acceso privado para gestionar solicitudes, precios, materiales y portafolio.</p><form onSubmit={submit}><input type="email" placeholder="Correo" value={email} onChange={e=>setEmail(e.target.value)} required/><input type="password" placeholder="Contraseña" value={password} onChange={e=>setPassword(e.target.value)} required/>{error&&<div className="notice">{error}</div>}<button className="btn primary" disabled={busy}>{busy?'Entrando…':'Entrar al panel'}</button></form></div></div>}

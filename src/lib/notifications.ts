@@ -1,0 +1,9 @@
+import { createAdminClient } from '@/lib/supabase/admin'
+export async function notifyBusiness(lead: { code:string; name:string; phone:string; email?:string|null; summary:string }) {
+  const admin = createAdminClient();const subject = `Nueva solicitud ${lead.code} · ${lead.name}`
+  const body = `NUEVA SOLICITUD DESDE LA WEB\n\n${lead.summary}\n\nCLIENTE\nNombre: ${lead.name}\nTeléfono: ${lead.phone}\nEmail: ${lead.email || 'No indicado'}\nCódigo: ${lead.code}\n\nAbre el panel administrativo para ver fotografías, solución sugerida, datos confirmados y conversación completa.`
+  let emailStatus='not_configured', waStatus='not_configured'
+  try {if (process.env.RESEND_API_KEY && process.env.BUSINESS_NOTIFICATION_EMAIL && process.env.EMAIL_FROM) {const r=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${process.env.RESEND_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({from:process.env.EMAIL_FROM,to:[process.env.BUSINESS_NOTIFICATION_EMAIL],subject,text:body})});emailStatus=r.ok?'sent':`error_${r.status}`}} catch { emailStatus='error' }
+  try {if (process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN && process.env.BUSINESS_WHATSAPP_TO) {const r=await fetch(`https://graph.facebook.com/v23.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,{method:'POST',headers:{Authorization:`Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,'Content-Type':'application/json'},body:JSON.stringify({messaging_product:'whatsapp',to:process.env.BUSINESS_WHATSAPP_TO,type:'text',text:{body}})});waStatus=r.ok?'sent':`error_${r.status}`}} catch { waStatus='error' }
+  await admin.from('notification_outbox').insert({lead_code:lead.code,channel:'email',status:emailStatus,payload:{subject,body}});await admin.from('notification_outbox').insert({lead_code:lead.code,channel:'whatsapp',status:waStatus,payload:{body}})
+}

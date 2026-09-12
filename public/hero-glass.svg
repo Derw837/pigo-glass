@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 650">
+ <rect width="800" height="650" fill="#17211f"/>
+ <rect x="68" y="58" width="664" height="520" rx="8" fill="#dfe7e4" opacity=".16" stroke="#c3d0cc" stroke-width="2"/>
+ <path d="M400 58v520M68 320h664" stroke="#c3d0cc" stroke-width="2" opacity=".65"/>
+ <rect x="90" y="82" width="286" height="214" fill="#a9c5c0" opacity=".22"/>
+ <rect x="424" y="82" width="286" height="214" fill="#b8d2cd" opacity=".16"/>
+ <rect x="90" y="344" width="286" height="210" fill="#d4e1df" opacity=".13"/>
+ <rect x="424" y="344" width="286" height="210" fill="#a2bbb6" opacity=".20"/>
+ <circle cx="650" cy="120" r="12" fill="#a97842"/><path d="M580 540h105" stroke="#a97842" stroke-width="6"/>
+ <text x="94" y="612" fill="#c7cecb" font-family="Arial" font-size="18" letter-spacing="5">VIDRIO · ALUMINIO · DISEÑO</text>
+</svg>

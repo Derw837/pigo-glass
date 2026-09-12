@@ -1,0 +1,4 @@
+codigo,nombre,tipo,color,prestacion,espesor_mm,costo_m2,precio_venta_m2,notas
+NORMAL-CLARO-4,Vidrio normal claro 4 mm,normal,claro,standard,4,0,0,
+LAMINADO-CLARO-8,Vidrio laminado claro 8 mm,laminated,claro,standard,8,0,0,
+LAMINADO-CS-8,Vidrio laminado control solar 8 mm,laminated,control solar,control_solar,8,0,0,
