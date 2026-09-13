@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { aluminumBrandLabel, glassFeatureLabel, glassTypeLabel, supplyLabel } from '@/lib/lead-summary'
+import { aluminumBrandLabel, aluminumOriginLabel, aluminumTierLabel, hardwareLabel, glassFeatureLabel, glassTypeLabel, supplyLabel } from '@/lib/lead-summary'
 import type { Assessment, ContactDraft, Estimate } from '@/lib/types'
 
 const categories = [
@@ -321,10 +321,11 @@ export default function QuoteAssistant({ compact = false, onClose }: { compact?:
     }
   }
 
-  async function send() {
-    if (busy || saving || (!text.trim() && !images.length)) return
+  async function send(quickText?: string) {
+    const chosenText = (quickText || '').trim()
+    if (busy || saving || (!chosenText && !text.trim() && !images.length)) return
 
-    const userText = text.trim() || 'Te adjunto una fotografía relacionada con el trabajo para que la revises.'
+    const userText = chosenText || text.trim() || 'Te adjunto una fotografía relacionada con el trabajo para que la revises.'
     const next = [...messages, { role: 'user' as const, text: userText }]
 
     setMessages(next)
@@ -586,6 +587,14 @@ export default function QuoteAssistant({ compact = false, onClose }: { compact?:
               ))}
               {busy && <div className="bubble ai typing">Analizando la información<span>•••</span></div>}
 
+              {!busy && !saved && !showSubmitActions && (assessment?.quickReplies?.length ?? 0) > 0 && (
+                <div className="assistant-quick-replies" aria-label="Respuestas sugeridas">
+                  {(assessment?.quickReplies ?? []).slice(0, 4).map(option => (
+                    <button type="button" key={option} onClick={() => send(option)}>{option}</button>
+                  ))}
+                </div>
+              )}
+
               {!saved && showSubmitActions && (
                 <div className="chat-submit-card">
                   <div>
@@ -660,7 +669,7 @@ export default function QuoteAssistant({ compact = false, onClose }: { compact?:
                     }
                   }}
                 />
-                <button className="send-btn" onClick={send} disabled={busy || saving}>Enviar</button>
+                <button className="send-btn" onClick={() => send()} disabled={busy || saving}>Enviar</button>
               </div>
             </div>
           </div>
@@ -690,7 +699,8 @@ export default function QuoteAssistant({ compact = false, onClose }: { compact?:
                 {confirmation.items.map((item, i) => {
                   const a = item.assessment
                   const glass = [glassTypeLabel(a.glassType), glassFeatureLabel(a.glassFeature), a.glassColor || null, a.glassThicknessMm ? `${a.glassThicknessMm} mm` : null].filter(Boolean).join(' · ')
-                  const aluminum = [aluminumBrandLabel(a.aluminumBrand), a.aluminumColor || null].filter(Boolean).join(' · ')
+                  const aluminum = [aluminumBrandLabel(a.aluminumBrand), aluminumOriginLabel(a.aluminumOrigin), a.aluminumSystem || null, aluminumTierLabel(a.aluminumTier), a.aluminumColor || null].filter(Boolean).join(' · ')
+                  const hardware = hardwareLabel(a.hardwareOrigin, a.hardwareTier)
                   return (
                     <section key={`${a.projectLabel}-${i}`}>
                       <span>{confirmation.items.length > 1 ? `Trabajo ${i + 1}` : 'Proyecto enviado'}</span>
@@ -699,6 +709,7 @@ export default function QuoteAssistant({ compact = false, onClose }: { compact?:
                       <p><b>Medidas:</b> {dimensions(a)}</p>
                       {a.aluminumBrand !== 'unknown' && <p><b>Aluminio:</b> {aluminum}</p>}
                       {a.glassType !== 'unknown' && <p><b>Vidrio:</b> {glass}</p>}
+                      {hardware && <p><b>Herrajes:</b> {hardware}</p>}
                       <p><b>Servicio:</b> {supplyLabel(a.supplyMode)}</p>
                       {a.detectedNeeds?.length > 0 && <p><b>Incluye / considerar:</b> {a.detectedNeeds.join(' · ')}</p>}
                     </section>

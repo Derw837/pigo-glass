@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { estimateProject } from '@/lib/quote-engine'
 import { estimateGranularProject } from '@/lib/granular-quote-engine'
 import { enrichAssessmentNeeds, glassGuidanceFallback } from '@/lib/installation-rules'
+import { ADVISOR_SYSTEM_KNOWLEDGE } from '@/lib/advisor-knowledge'
 import type { Assessment, ContactDraft, Estimate } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -32,6 +33,10 @@ FORMA DE HABLAR
 - Mantén el hilo aunque responda “negro”, “CEDAL”, “6 mm”, “incluye todo”, “sí”, “no”, “¿cuánto sale?”.
 - Si el cliente elige algo distinto de tu recomendación, registra su elección. Si existe una consideración real de seguridad, menciónala una sola vez y deja la decisión técnica final al equipo.
 - No repitas advertencias de visita, apoyos o seguridad en todos los mensajes.
+- Cuando tu pregunta tenga 2 a 4 respuestas cortas y claras, llena quickReplies con esas opciones para que la interfaz muestre atajos. Son opcionales: el cliente siempre puede escribir otra cosa. Si la pregunta es abierta, usa quickReplies=[].
+- Tu objetivo comercial es dejar una ficha cotizable, no solo entender la idea. Cuando el trabajo lo permita, pregunta de forma progresiva por sistema/perfilería, color, vidrio (tipo/color/espesor o prestación), y herraje si afecta el precio.
+- Si el cliente no conoce términos técnicos, NO le preguntes “¿qué serie quiere?” sin explicar. Di algo como: “¿Buscas una opción más económica, una estándar o un sistema europeo con mejor sellado y herrajes?” y luego traduce su respuesta al campo correspondiente.
+- Si el cliente pide “lo mejor”, “que no entre ruido”, “que selle mejor”, “algo elegante” o “algo económico”, usa esa prioridad para recomendar el sistema; no lo obligues a elegir a ciegas.
 
 VARIOS TRABAJOS EN UNA MISMA SOLICITUD
 - El sistema puede guardar varias ventanas/trabajos en una sola solicitud.
@@ -44,18 +49,22 @@ VARIOS TRABAJOS EN UNA MISMA SOLICITUD
 
 CUÁNDO UN TRABAJO ESTÁ SUFICIENTEMENTE DEFINIDO
 readyToLead=true significa que el trabajo ACTUAL ya tiene suficiente información para que un técnico/comercial pueda cotizarlo o revisarlo sin tener que leer toda la conversación.
-- Ventanas/puertas: tipo, medidas aproximadas, vidrio elegido o una recomendación aceptable, aluminio/marca/color cuando aplique y modalidad de suministro/instalación.
-- Cubiertas/pérgolas: medidas aproximadas, si existe estructura de apoyo, vidrio solicitado o prestación deseada y modalidad del servicio. Los detalles estructurales pueden quedar pendientes para revisión técnica.
-- Mamparas/cortinas de baño: medidas aproximadas, estilo básico (con o sin perfilería si se sabe), vidrio/preferencia y modalidad del servicio.
-- Barandas/pasamanos: recorrido/medidas aproximadas y descripción suficiente; siempre pueden quedar detalles de anclaje para revisión técnica.
+- Ventanas/puertas: tipo, medidas aproximadas, sistema/perfilería suficientemente definida para cotizar (o una recomendación aceptada), color, vidrio suficientemente definido y herraje cuando la hoja sea móvil y su calidad/origen cambie el precio, además de modalidad de suministro/instalación.
+- Cubiertas/pérgolas: medidas aproximadas, si existe estructura de apoyo, vidrio/prestación deseada y modalidad del servicio. No hace falta definir ingeniería por chat; los detalles estructurales pueden quedar pendientes para revisión técnica.
+- Mamparas/cortinas de baño: medidas aproximadas, tipo de apertura, con perfilería o sin marco cuando corresponda, vidrio/preferencia, herrajes si afectan el precio y modalidad del servicio.
+- Barandas/pasamanos: recorrido/medidas aproximadas, estilo de sujeción preferido si se conoce y descripción suficiente; los detalles de anclaje pueden quedar para revisión técnica.
 - Proyecto especial: descripción clara y, cuando sea posible, medidas o foto de referencia. No interrogues indefinidamente si el equipo ya puede entender qué quiere el cliente.
 - Si faltan datos opcionales que un técnico puede confirmar después, eso NO debe impedir readyToLead=true.
 
-ALUMINIO
-- CEDAL: opción principal/de mayor nivel dentro del catálogo de la empresa.
-- Andesía: alternativa más económica.
-- No desacredites ninguna marca.
-- Pregunta marca y color solo cuando el trabajo realmente use perfilería de aluminio.
+ALUMINIO, SISTEMA Y HERRAJES
+- CEDAL: opción principal dentro del catálogo de la empresa; es aluminio fabricado en Ecuador y tiene sistemas convencionales y sistemas de concepto europeo.
+- Andesía: alternativa más económica dentro de la oferta inicial.
+- También puede existir una opción importada o sistema europeo/premium si el administrador la configura.
+- No desacredites ninguna marca, origen ni herraje.
+- Pregunta marca/origen, sistema y color solo cuando el trabajo realmente use perfilería de aluminio.
+- Para hojas móviles, puertas, mamparas y sistemas donde el herraje cambie mucho el valor, pregunta si desea alternativa económica/china, estándar o europea/premium. Si el cliente no sabe, recomienda según presupuesto y uso.
+- aluminumOrigin guarda national/imported/mixed/unknown. aluminumSystem guarda el nombre comercial (por ejemplo: Corrediza 7 perfiles, T45 Europeo, S4200, Ventana Fija Estándar, S3000, Mampara S-100). aluminumTier guarda economic/standard/premium/european/unknown.
+- hardwareOrigin guarda chinese/european/national/mixed/unknown. hardwareTier guarda economic/standard/premium/unknown.
 
 REGLAS COMERCIALES INICIALES DE VIDRIO DE ESTA EMPRESA
 Estas reglas reflejan lo que la empresa desea ofrecer en su catálogo inicial. No afirmes que son reglas universales del mercado.
@@ -70,7 +79,7 @@ Estas reglas reflejan lo que la empresa desea ofrecer en su catálogo inicial. N
 - Vidrio curvo, fachadas especiales, pisos transitables, acuarios/fuentes estructurales y trabajos no convencionales: clasificación técnica; no inventes espesor ni composición.
 
 DATOS ESTRUCTURADOS DEL VIDRIO
-- glassFeature='control_solar' cuando el cliente pide control solar; 'acoustic' cuando pide reducción de ruido; 'acid_etched' para al ácido/translúcido; 'decorative' para catedral/decorativo; 'standard' para vidrio común sin prestación especial; 'unknown' si no está claro.
+- glassFeature='control_solar' cuando pide solo control solar; 'acoustic' cuando pide solo reducción de ruido; 'acoustic_control_solar' cuando pide AMBAS prestaciones; 'acid_etched' para al ácido/translúcido; 'decorative' para catedral/decorativo; 'standard' para vidrio común sin prestación especial; 'unknown' si no está claro.
 - glassColor describe el color/tonalidad (claro, bronce, gris, etc.), no la prestación.
 
 SEGURIDAD
@@ -127,7 +136,9 @@ RESUMEN INTERNO PARA EL EQUIPO
 - nextStep = acción concreta para el equipo.
 
 FUERA DE ALCANCE
-Si preguntan cultura general, programación, tareas, política, recetas, deportes, entretenimiento, generación de imágenes o cualquier tema ajeno, scope=out_of_scope y responde únicamente que este asistente atiende vidrio, aluminio e instalación.`
+Si preguntan cultura general, programación, tareas, política, recetas, deportes, entretenimiento, generación de imágenes o cualquier tema ajeno, scope=out_of_scope y responde únicamente que este asistente atiende vidrio, aluminio e instalación.
+
+${ADVISOR_SYSTEM_KNOWLEDGE}`
 
 const contactSchema = {
   type: 'object',
@@ -173,18 +184,24 @@ const schema = {
     recommendationReason: { type: 'string' },
     technicalNotes: { type: 'array', items: { type: 'string' } },
     nextStep: { type: 'string' },
+    quickReplies: { type: 'array', items: { type: 'string' }, maxItems: 4 },
     aluminumBrand: { type: 'string', enum: ['cedal', 'andesia', 'other', 'unknown'] },
+    aluminumOrigin: { type: 'string', enum: ['national','imported','mixed','unknown'] },
+    aluminumSystem: { type: 'string' },
+    aluminumTier: { type: 'string', enum: ['economic','standard','premium','european','unknown'] },
     aluminumColor: { type: 'string' },
+    hardwareOrigin: { type: 'string', enum: ['chinese','european','national','mixed','unknown'] },
+    hardwareTier: { type: 'string', enum: ['economic','standard','premium','unknown'] },
     glassType: { type: 'string', enum: ['normal', 'tempered', 'laminated', 'tempered_laminated', 'other', 'unknown'] },
     glassColor: { type: 'string' },
-    glassFeature: { type: 'string', enum: ['standard','control_solar','acoustic','acid_etched','decorative','other','unknown'] },
+    glassFeature: { type: 'string', enum: ['standard','control_solar','acoustic','acoustic_control_solar','acid_etched','decorative','other','unknown'] },
     glassThicknessMm: { type: ['number', 'null'] },
     contact: contactSchema,
     conversationStage: { type: 'string', enum: ['project', 'contact', 'confirm'] },
     readyToSubmit: { type: 'boolean' }
   },
   required: [
-    'scope','reply','projectType','projectLabel','quoteMode','supplyMode','widthM','heightM','lengthM','quantity','existingStructure','riskLevel','needsVisit','missing','detectedNeeds','readyToLead','confidence','clientRequestSummary','providedData','recommendedSolution','recommendedGlass','glassAlternatives','recommendationReason','technicalNotes','nextStep','aluminumBrand','aluminumColor','glassType','glassColor','glassFeature','glassThicknessMm','contact','conversationStage','readyToSubmit'
+    'scope','reply','projectType','projectLabel','quoteMode','supplyMode','widthM','heightM','lengthM','quantity','existingStructure','riskLevel','needsVisit','missing','detectedNeeds','readyToLead','confidence','clientRequestSummary','providedData','recommendedSolution','recommendedGlass','glassAlternatives','recommendationReason','technicalNotes','nextStep','quickReplies','aluminumBrand','aluminumOrigin','aluminumSystem','aluminumTier','aluminumColor','hardwareOrigin','hardwareTier','glassType','glassColor','glassFeature','glassThicknessMm','contact','conversationStage','readyToSubmit'
   ]
 }
 
@@ -232,7 +249,12 @@ function mergeAssessment(previous: Partial<Assessment> | undefined, next: Assess
     lengthM: next.lengthM ?? previous.lengthM ?? null,
     quantity: next.quantity ?? previous.quantity ?? null,
     aluminumBrand: next.aluminumBrand === 'unknown' ? (previous.aluminumBrand || 'unknown') : next.aluminumBrand,
+    aluminumOrigin: next.aluminumOrigin === 'unknown' ? (previous.aluminumOrigin || 'unknown') : next.aluminumOrigin,
+    aluminumSystem: next.aluminumSystem || previous.aluminumSystem || '',
+    aluminumTier: next.aluminumTier === 'unknown' ? (previous.aluminumTier || 'unknown') : next.aluminumTier,
     aluminumColor: next.aluminumColor || previous.aluminumColor || '',
+    hardwareOrigin: next.hardwareOrigin === 'unknown' ? (previous.hardwareOrigin || 'unknown') : next.hardwareOrigin,
+    hardwareTier: next.hardwareTier === 'unknown' ? (previous.hardwareTier || 'unknown') : next.hardwareTier,
     glassType: next.glassType === 'unknown' ? (previous.glassType || 'unknown') : next.glassType,
     glassColor: next.glassColor || previous.glassColor || '',
     glassFeature: next.glassFeature === 'unknown' ? (previous.glassFeature || 'unknown') : next.glassFeature,
@@ -273,7 +295,7 @@ async function enforceBudget(req: NextRequest) {
   const clientHash = createHash('sha256').update(`${ip}|${ua.slice(0,120)}|${process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(-8) || 'pigo'}`).digest('hex')
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
   const { count } = await db.from('ai_rate_limits').select('*', { count: 'exact', head: true }).eq('client_hash', clientHash).gte('created_at', hourAgo)
-  if ((count || 0) >= Number(process.env.AI_MAX_REQUESTS_PER_HOUR || 12)) return { ok: false, reason: 'rate' }
+  if ((count || 0) >= Number(process.env.AI_MAX_REQUESTS_PER_HOUR || 80)) return { ok: false, reason: 'rate' }
   const { data: tokens } = await db.rpc('ai_tokens_today')
   if (Number(tokens || 0) >= Number(process.env.AI_DAILY_TOKEN_BUDGET || 150000)) return { ok: false, reason: 'budget' }
   await db.from('ai_rate_limits').insert({ client_hash: clientHash })
@@ -283,7 +305,7 @@ async function enforceBudget(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const messages = Array.isArray(body.messages) ? body.messages.slice(-14) : []
+    const messages = Array.isArray(body.messages) ? body.messages.slice(-18) : []
     const images = Array.isArray(body.images) ? body.images.slice(0, 3) : []
     const previousAssessment = (body.currentAssessment || null) as Partial<Assessment> | null
     const previousContact = (body.knownContact || previousAssessment?.contact || {}) as Partial<ContactDraft>
@@ -328,7 +350,12 @@ export async function POST(req: NextRequest) {
         quantity: previousAssessment.quantity,
         existingStructure: previousAssessment.existingStructure,
         aluminumBrand: previousAssessment.aluminumBrand,
+        aluminumOrigin: previousAssessment.aluminumOrigin,
+        aluminumSystem: previousAssessment.aluminumSystem,
+        aluminumTier: previousAssessment.aluminumTier,
         aluminumColor: previousAssessment.aluminumColor,
+        hardwareOrigin: previousAssessment.hardwareOrigin,
+        hardwareTier: previousAssessment.hardwareTier,
         glassType: previousAssessment.glassType,
         glassColor: previousAssessment.glassColor,
         glassFeature: previousAssessment.glassFeature,
@@ -369,10 +396,10 @@ export async function POST(req: NextRequest) {
     const response = await openai.responses.create({
       model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
       input,
-      text: { format: { type: 'json_schema', name: 'pigo_glass_assessment_v7', strict: true, schema } } as any,
+      text: { format: { type: 'json_schema', name: 'pigo_glass_assessment_v11', strict: true, schema } } as any,
       max_output_tokens: 1450,
       store: false,
-      prompt_cache_key: 'pigo-glass-advisor-v7'
+      prompt_cache_key: 'pigo-glass-advisor-v11'
     } as any)
 
     let assessment = JSON.parse(response.output_text) as Assessment

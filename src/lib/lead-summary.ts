@@ -20,11 +20,29 @@ export function aluminumBrandLabel(brand?: string) {
 }
 
 
+
+export function aluminumOriginLabel(origin?: string) {
+  const map: Record<string,string> = { national: 'Nacional', imported: 'Importado', mixed: 'Mixto' }
+  return map[origin || ''] || ''
+}
+
+export function aluminumTierLabel(tier?: string) {
+  const map: Record<string,string> = { economic: 'Económico', standard: 'Estándar', premium: 'Premium', european: 'Sistema europeo' }
+  return map[tier || ''] || ''
+}
+
+export function hardwareLabel(origin?: string, tier?: string) {
+  const o: Record<string,string> = { chinese: 'Chino', european: 'Europeo', national: 'Nacional', mixed: 'Mixto' }
+  const t: Record<string,string> = { economic: 'Económico', standard: 'Estándar', premium: 'Premium' }
+  return [o[origin || ''], t[tier || '']].filter(Boolean).join(' · ')
+}
+
 export function glassFeatureLabel(feature?: string) {
   const map: Record<string, string> = {
     standard: 'Estándar',
     control_solar: 'Control solar',
     acoustic: 'Acústico',
+    acoustic_control_solar: 'Acústico + control solar',
     acid_etched: 'Al ácido / translúcido',
     decorative: 'Decorativo',
     other: 'Especial'
@@ -57,9 +75,15 @@ export function buildItemBrief(a?: Assessment | null, estimate?: Estimate, index
   if (!a) return ''
   const title = `${index ? `${index}. ` : ''}${a.projectLabel || a.projectType || 'Trabajo'}`
   const glass = [glassTypeLabel(a.glassType), glassFeatureLabel(a.glassFeature), a.glassColor || null, a.glassThicknessMm ? `${a.glassThicknessMm} mm` : null].filter(Boolean).join(' · ')
-  const aluminum = a.aluminumBrand !== 'unknown' || a.aluminumColor
-    ? `${aluminumBrandLabel(a.aluminumBrand)}${a.aluminumColor ? ` · ${a.aluminumColor}` : ''}`
-    : 'Por definir'
+  const aluminumParts = [
+    aluminumBrandLabel(a.aluminumBrand),
+    aluminumOriginLabel(a.aluminumOrigin),
+    a.aluminumSystem || null,
+    aluminumTierLabel(a.aluminumTier),
+    a.aluminumColor || null
+  ].filter(Boolean)
+  const aluminum = aluminumParts.length ? aluminumParts.join(' · ') : 'Por definir'
+  const hardware = hardwareLabel(a.hardwareOrigin, a.hardwareTier)
   const value = estimate ? `$${estimate.low.toFixed(2)} – $${estimate.high.toFixed(2)}` : 'Pendiente de revisión'
 
   return [
@@ -68,6 +92,7 @@ export function buildItemBrief(a?: Assessment | null, estimate?: Estimate, index
     `Medidas: ${dimensions(a)}`,
     `Aluminio: ${aluminum}`,
     `Vidrio: ${glass}`,
+    hardware ? `Herrajes: ${hardware}` : null,
     `Servicio: ${supplyLabel(a.supplyMode)}`,
     a.detectedNeeds?.length ? `Incluye / considerar: ${a.detectedNeeds.join(', ')}` : null,
     a.recommendedGlass ? `Orientación de vidrio: ${a.recommendedGlass}${a.recommendationReason ? ` — ${a.recommendationReason}` : ''}` : null,

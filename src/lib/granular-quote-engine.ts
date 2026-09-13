@@ -14,6 +14,12 @@ type Recipe = {
   margin_percent: number
   error_percent: number
   minimum_charge: number
+  system_code?: string
+  system_label?: string
+  aluminum_origin?: string
+  system_tier?: string
+  hardware_origin?: string
+  hardware_tier?: string
 }
 
 type Formula = 'width' | 'height' | 'perimeter' | 'area' | 'unit'
@@ -54,8 +60,11 @@ function normalize(s: string) {
 function inferFeature(a: Assessment) {
   if (a.glassFeature && a.glassFeature !== 'unknown') return a.glassFeature
   const hay = normalize([a.glassColor, a.recommendedGlass, a.clientRequestSummary, ...(a.detectedNeeds || [])].join(' '))
-  if (hay.includes('control solar')) return 'control_solar'
-  if (hay.includes('acust') || hay.includes('ruido')) return 'acoustic'
+  const wantsSolar = hay.includes('control solar') || hay.includes('solar')
+  const wantsAcoustic = hay.includes('acust') || hay.includes('ruido') || hay.includes('sonido')
+  if (wantsSolar && wantsAcoustic) return 'acoustic_control_solar'
+  if (wantsSolar) return 'control_solar'
+  if (wantsAcoustic) return 'acoustic'
   if (hay.includes('acido') || hay.includes('transluc')) return 'acid_etched'
   if (hay.includes('catedral') || hay.includes('decor')) return 'decorative'
   return 'standard'
@@ -73,6 +82,42 @@ function catalogLinearPrice(row: any, recipe: Recipe) {
   const length = num(row.bar_length_m)
   if (!length) return 0
   return raw / length
+}
+
+
+function systemSlug(value: string) {
+  return normalize(value).replace(/[^a-z0-9]+/g, '-')
+}
+
+function recipeScore(r: Recipe, a: Assessment) {
+  let score = 0
+  const requestedSystem = systemSlug(a.aluminumSystem || '')
+  const code = systemSlug(r.system_code || '')
+  const label = systemSlug(r.system_label || r.label || '')
+  if (requestedSystem) {
+    if (code && (requestedSystem === code || requestedSystem.includes(code) || code.includes(requestedSystem))) score += 50
+    else if (label && (label.includes(requestedSystem) || requestedSystem.includes(label))) score += 35
+    else if (code === 'generic') score += 2
+  } else if (code === 'generic') score += 10
+
+  const recipeOrigin = normalize(r.aluminum_origin || '')
+  const recipeTier = normalize(r.system_tier || '')
+  const recipeHardwareOrigin = normalize(r.hardware_origin || '')
+  const recipeHardwareTier = normalize(r.hardware_tier || '')
+
+  if (a.aluminumOrigin !== 'unknown' && recipeOrigin && recipeOrigin !== 'unknown') {
+    score += recipeOrigin === normalize(a.aluminumOrigin) ? 8 : -20
+  }
+  if (a.aluminumTier !== 'unknown' && recipeTier && recipeTier !== 'unknown') {
+    score += recipeTier === normalize(a.aluminumTier) ? 7 : -12
+  }
+  if (a.hardwareOrigin !== 'unknown' && recipeHardwareOrigin && recipeHardwareOrigin !== 'unknown') {
+    score += recipeHardwareOrigin === normalize(a.hardwareOrigin) ? 6 : -25
+  }
+  if (a.hardwareTier !== 'unknown' && recipeHardwareTier && recipeHardwareTier !== 'unknown') {
+    score += recipeHardwareTier === normalize(a.hardwareTier) ? 5 : -10
+  }
+  return score
 }
 
 async function estimateLaborOnly(db: Db, a: Assessment, serviceKey: string): Promise<Estimate> {
@@ -101,15 +146,25 @@ export async function estimateGranularProject(db: Db, a: Assessment, serviceKey:
   if (a.supplyMode !== 'company_supplies_and_installs') return null
 
   const brand = a.aluminumBrand === 'cedal' ? 'CEDAL' : a.aluminumBrand === 'andesia' ? 'ANDESIA' : 'ANY'
-  const { data: recipe } = await db.from('quote_recipes').select('*').eq('service_key', serviceKey).eq('brand', brand).eq('enabled', true).maybeSingle()
-  if (!recipe) return null
-  const r = recipe as Recipe
+  let rq = db.from('quote_recipes').select('*').eq('service_key', serviceKey).eq('enabled', true)
+  if (brand !== 'ANY') rq = rq.in('brand', [brand, 'ANY'])
+  else rq = rq.eq('brand', 'ANY')
+  const { data: recipes } = await rq.limit(50)
+  if (!recipes?.length) return null
+  const requestedSystem = systemSlug(a.aluminumSystem || '')
+  const eligible = requestedSystem
+    ? recipes.filter((x:any) => recipeScore(x as Recipe, a) >= 30 || systemSlug(String(x.system_code || '')) === 'generic')
+    : recipes
+  if (!eligible.length) return null
+  const ranked = [...eligible].sort((x:any,y:any)=>recipeScore(y as Recipe,a)-recipeScore(x as Recipe,a))
+  const r = ranked[0] as Recipe
 
   const count = Math.max(1, a.quantity || 1)
   const { data: profileRules } = await db.from('quote_recipe_profiles').select('*').eq('recipe_id', r.id).order('sort_order')
+  if (['window_sliding','window_fixed','window_projectable','door','partition','facade'].includes(serviceKey) && !(profileRules || []).length) return null
   const refs = [...new Set((profileRules || []).map((x: any) => String(x.catalog_reference)))]
   const { data: catalogRows } = refs.length
-    ? await db.from('catalog_items').select('brand,reference,name,unit,bar_length_m,cost_price,sale_price,active').eq('brand', brand).in('reference', refs).eq('active', true)
+    ? await db.from('catalog_items').select('brand,reference,name,unit,bar_length_m,cost_price,sale_price,active').eq('brand', r.brand).in('reference', refs).eq('active', true)
     : { data: [] }
   const catalog = new Map((catalogRows || []).map((x: any) => [String(x.reference), x]))
 

@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/browser'
 
-type Recipe={id:string;service_key:string;brand:string;label:string;enabled:boolean;price_mode:string;glass_area_factor:number;waste_percent:number;margin_percent:number;error_percent:number;minimum_charge:number;notes:string|null}
+type Recipe={id:string;service_key:string;brand:string;label:string;enabled:boolean;price_mode:string;glass_area_factor:number;waste_percent:number;margin_percent:number;error_percent:number;minimum_charge:number;notes:string|null;system_code?:string;system_label?:string;aluminum_origin?:string;system_tier?:string;hardware_origin?:string;hardware_tier?:string}
 type ProfileLine={id:string;recipe_id:string;catalog_reference:string;role:string;formula:string;multiplier:number;waste_percent:number;sort_order:number}
 type AccessoryLine={id:string;recipe_id:string;accessory_code:string;formula:string;multiplier:number;sort_order:number}
 type Catalog={brand:string;reference:string;name:string;cost_price:number;sale_price:number;bar_length_m:number|null;unit:string;active:boolean}
@@ -25,6 +25,8 @@ export default function RecipesManager({recipes,profileLines,accessoryLines,cata
     const lines=ps.filter(x=>x.recipe_id===r.id)
     const acc=acs.filter(x=>x.recipe_id===r.id)
     const missing:string[]=[]
+    const aluminumServices=['window_sliding','window_fixed','window_projectable','door','partition','facade']
+    if(aluminumServices.includes(r.service_key)&&!lines.length) missing.push('sin perfilería configurada')
     for(const x of lines){
       const c=catalogMap.get(`${r.brand}|${x.catalog_reference}`)
       if(!c) missing.push(`${x.catalog_reference} no está en catálogo`)
@@ -48,7 +50,7 @@ export default function RecipesManager({recipes,profileLines,accessoryLines,cata
       alert(`No conviene activar todavía esta receta. Falta:\n- ${missing.slice(0,12).join('\n- ')}`)
       return
     }
-    const {error}=await db.from('quote_recipes').update({label:r.label,enabled:r.enabled,price_mode:r.price_mode,glass_area_factor:n(r.glass_area_factor),waste_percent:n(r.waste_percent),margin_percent:n(r.margin_percent),error_percent:n(r.error_percent),minimum_charge:n(r.minimum_charge),notes:r.notes||null,updated_at:new Date().toISOString()}).eq('id',r.id)
+    const {error}=await db.from('quote_recipes').update({label:r.label,system_code:r.system_code||'generic',system_label:r.system_label||null,aluminum_origin:r.aluminum_origin||'unknown',system_tier:r.system_tier||'unknown',hardware_origin:r.hardware_origin||'unknown',hardware_tier:r.hardware_tier||'unknown',enabled:r.enabled,price_mode:r.price_mode,glass_area_factor:n(r.glass_area_factor),waste_percent:n(r.waste_percent),margin_percent:n(r.margin_percent),error_percent:n(r.error_percent),minimum_charge:n(r.minimum_charge),notes:r.notes||null,updated_at:new Date().toISOString()}).eq('id',r.id)
     if(error) alert(error.message)
   }
 
@@ -72,7 +74,7 @@ export default function RecipesManager({recipes,profileLines,accessoryLines,cata
       const acc=acs.filter(x=>x.recipe_id===r.id)
       return <section className="recipe-card" key={r.id}>
         <button className="recipe-head" onClick={()=>setOpen(isOpen?null:r.id)}>
-          <div><span>{r.brand} · {r.service_key}</span><strong>{r.label}</strong></div>
+          <div><span>{r.brand} · {r.service_key}{r.system_label?` · ${r.system_label}`:''}</span><strong>{r.label}</strong></div>
           <div className="recipe-head-right">
             <em className={missing.length?'status warn':'status ok'}>{missing.length?`${missing.length} pendientes`:'Precios completos'}</em>
             <em className={r.enabled?'status on':'status'}>{r.enabled?'ACTIVA':'DESACTIVADA'}</em>
@@ -81,6 +83,12 @@ export default function RecipesManager({recipes,profileLines,accessoryLines,cata
         </button>
         {isOpen&&<div className="recipe-body">
           <div className="recipe-settings">
+            <label>Sistema / código<input value={r.system_code||''} onChange={e=>setRs(v=>v.map(y=>y.id===r.id?{...y,system_code:e.target.value}:y))}/></label>
+            <label>Nombre comercial<input value={r.system_label||''} onChange={e=>setRs(v=>v.map(y=>y.id===r.id?{...y,system_label:e.target.value}:y))}/></label>
+            <label>Origen aluminio<select value={r.aluminum_origin||'unknown'} onChange={e=>setRs(v=>v.map(y=>y.id===r.id?{...y,aluminum_origin:e.target.value}:y))}><option value="unknown">Por definir</option><option value="national">Nacional</option><option value="imported">Importado</option><option value="mixed">Mixto</option></select></label>
+            <label>Nivel sistema<select value={r.system_tier||'unknown'} onChange={e=>setRs(v=>v.map(y=>y.id===r.id?{...y,system_tier:e.target.value}:y))}><option value="unknown">Por definir</option><option value="economic">Económico</option><option value="standard">Estándar</option><option value="premium">Premium</option><option value="european">Europeo</option></select></label>
+            <label>Origen herraje<select value={r.hardware_origin||'unknown'} onChange={e=>setRs(v=>v.map(y=>y.id===r.id?{...y,hardware_origin:e.target.value}:y))}><option value="unknown">Por definir</option><option value="chinese">Chino</option><option value="european">Europeo</option><option value="national">Nacional</option><option value="mixed">Mixto</option></select></label>
+            <label>Nivel herraje<select value={r.hardware_tier||'unknown'} onChange={e=>setRs(v=>v.map(y=>y.id===r.id?{...y,hardware_tier:e.target.value}:y))}><option value="unknown">Por definir</option><option value="economic">Económico</option><option value="standard">Estándar</option><option value="premium">Premium</option></select></label>
             <label>Modo de precio<select value={r.price_mode} onChange={e=>setRs(v=>v.map(y=>y.id===r.id?{...y,price_mode:e.target.value}:y))}><option value="cost_plus_margin">Costo + margen</option><option value="sale_prices">Precio de venta</option></select></label>
             <label>Factor área vidrio<input type="number" step=".01" min="0.5" max="1.2" value={r.glass_area_factor} onChange={e=>setRs(v=>v.map(y=>y.id===r.id?{...y,glass_area_factor:n(e.target.value)}:y))}/></label>
             <label>Desperdicio %<input type="number" step=".1" value={r.waste_percent} onChange={e=>setRs(v=>v.map(y=>y.id===r.id?{...y,waste_percent:n(e.target.value)}:y))}/></label>

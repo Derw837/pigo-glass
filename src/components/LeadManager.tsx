@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/browser'
-import { aluminumBrandLabel, glassFeatureLabel, glassTypeLabel, supplyLabel } from '@/lib/lead-summary'
+import { aluminumBrandLabel, aluminumOriginLabel, aluminumTierLabel, hardwareLabel, glassFeatureLabel, glassTypeLabel, supplyLabel } from '@/lib/lead-summary'
 
 function dims(a: any) {
   const parts: string[] = []
@@ -25,8 +25,15 @@ function glassText(a: any) {
 function aluminumText(a: any) {
   return [
     aluminumBrandLabel(a?.aluminumBrand),
+    aluminumOriginLabel(a?.aluminumOrigin),
+    a?.aluminumSystem || null,
+    aluminumTierLabel(a?.aluminumTier),
     a?.aluminumColor || null
   ].filter(Boolean).join(' · ')
+}
+
+function hardwareText(a: any) {
+  return hardwareLabel(a?.hardwareOrigin, a?.hardwareTier) || 'Por definir / no aplica'
 }
 
 function riskLabel(value?: string) {
@@ -221,6 +228,7 @@ export default function LeadManager({ initial }: { initial: any[] }) {
                     <div><span>Medidas</span><strong>{dims(a)}</strong></div>
                     <div><span>Aluminio</span><strong>{aluminumText(a)}</strong></div>
                     <div><span>Vidrio</span><strong>{glassText(a)}</strong></div>
+                    <div><span>Herrajes</span><strong>{hardwareText(a)}</strong></div>
                     <div><span>Servicio</span><strong>{supplyLabel(a.supplyMode)}</strong></div>
                   </div>
 

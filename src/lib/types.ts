@@ -43,12 +43,18 @@ export type Assessment = {
   recommendationReason: string
   technicalNotes: string[]
   nextStep: string
+  quickReplies: string[]
 
   aluminumBrand: 'cedal' | 'andesia' | 'other' | 'unknown'
+  aluminumOrigin: 'national' | 'imported' | 'mixed' | 'unknown'
+  aluminumSystem: string
+  aluminumTier: 'economic' | 'standard' | 'premium' | 'european' | 'unknown'
   aluminumColor: string
+  hardwareOrigin: 'chinese' | 'european' | 'national' | 'mixed' | 'unknown'
+  hardwareTier: 'economic' | 'standard' | 'premium' | 'unknown'
   glassType: 'normal' | 'tempered' | 'laminated' | 'tempered_laminated' | 'other' | 'unknown'
   glassColor: string
-  glassFeature: 'standard' | 'control_solar' | 'acoustic' | 'acid_etched' | 'decorative' | 'other' | 'unknown'
+  glassFeature: 'standard' | 'control_solar' | 'acoustic' | 'acoustic_control_solar' | 'acid_etched' | 'decorative' | 'other' | 'unknown'
   glassThicknessMm: number | null
 
   contact: ContactDraft

@@ -199,3 +199,27 @@ La galería admite enlaces directos por categoría, por ejemplo:
 - `/galeria?categoria=Ventanas`
 - `/galeria?categoria=Pérgolas`
 - `/galeria?categoria=Cortinas%20de%20baño`
+
+---
+
+## V11 · Asesor técnico-comercial y sistemas
+
+V11 amplía el asesor para recopilar, solo cuando aplique, la información que realmente cambia una cotización: sistema/perfilería, origen, nivel, color, vidrio y herrajes. El cliente no necesita conocer las series; el asistente puede preguntar primero por presupuesto/prestaciones y recomendar una alternativa. Cuando una pregunta tiene opciones claras puede mostrar respuestas rápidas opcionales, sin impedir que el cliente escriba con sus propias palabras.
+
+Después de copiar V11 ejecuta en Supabase SQL Editor:
+
+```sql
+supabase/migrations/0006_advisor_systems_and_recipes.sql
+```
+
+La migración agrega metadatos de sistema/origen/herraje a `quote_recipes` y crea recetas de referencia **desactivadas** para varias líneas CEDAL/Andesía. No actives una receta hasta configurar el despiece y los precios reales.
+
+Si tu `.env.local` tiene un límite anterior, actualiza:
+
+```env
+AI_MAX_REQUESTS_PER_HOUR=80
+```
+
+En desarrollo local (`localhost`) las pruebas siguen sin límite horario. En producción permanece el límite por visitante y el presupuesto diario global.
+
+Sistemas incorporados como referencia comercial: CEDAL 4/6/7 perfiles, T45, S4200, S3000, fija estándar/proyectable y mamparas S-100/S-200/S-300; Andesía 4/7 perfiles, proyectable, fija estándar, puerta corrediza económica/estándar y mamparas Serie 100/200.
