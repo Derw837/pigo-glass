@@ -130,7 +130,8 @@ export default function LeadManager({ initial }: { initial: any[] }) {
               </td>
               <td>
                 {x.city}{x.province ? `, ${x.province}` : ''}
-                <div className="table-sub">{x.address || x.sector || 'Dirección por confirmar'}</div>
+                <div className="table-sub">{x.sector ? `Sector: ${x.sector}` : 'Sector por confirmar'}</div>
+                {x.address && <div className="table-sub">{x.address}</div>}
               </td>
               <td>{x.needs_visit ? 'Sí' : 'No / por confirmar'}</td>
               <td>{x.estimate?.low != null ? `$${Number(x.estimate.low).toFixed(2)} – $${Number(x.estimate.high).toFixed(2)}` : 'Pendiente'}</td>
@@ -159,7 +160,7 @@ export default function LeadManager({ initial }: { initial: any[] }) {
           <div className="admin-top">
             <div className="admin-title">
               <h1 style={{ fontSize: 30 }}>{selected.code}</h1>
-              <p>{selected.name} · {selected.city}{selected.province ? `, ${selected.province}` : ''}</p>
+              <p>{selected.name} · {selected.city}{selected.sector ? ` · ${selected.sector}` : ''}{selected.province ? `, ${selected.province}` : ''}</p>
             </div>
             <button className="btn small" onClick={() => setSelected(null)}>Cerrar</button>
           </div>
@@ -185,7 +186,8 @@ export default function LeadManager({ initial }: { initial: any[] }) {
                 {selected.phone}<br />
                 {selected.email || 'Sin correo'}<br /><br />
                 <strong>{selected.city}{selected.province ? `, ${selected.province}` : ''}, Ecuador</strong><br />
-                {selected.address || selected.sector || 'Dirección pendiente; el cliente puede compartirla por WhatsApp'}
+                {selected.sector ? <>Sector: {selected.sector}<br /></> : null}
+                {selected.address || 'Dirección exacta pendiente; el cliente puede compartirla por WhatsApp'}
               </p>
               <a className="btn small" href={`https://wa.me/${String(selected.phone).replace(/\D/g, '')}`} target="_blank">Abrir WhatsApp</a>
             </div>

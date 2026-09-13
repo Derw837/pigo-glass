@@ -118,7 +118,7 @@ export function buildLeadBrief(args: {
     `CLIENTE: ${contact.fullName}`,
     `WhatsApp / teléfono: ${contact.phone}`,
     contact.email ? `Email: ${contact.email}` : null,
-    `Instalación: ${contact.city}${contact.province ? `, ${contact.province}` : ''}, Ecuador`,
+    `Instalación: ${contact.city}${contact.sector ? ` · sector ${contact.sector}` : ''}${contact.province ? `, ${contact.province}` : ''}, Ecuador`,
     `Dirección: ${contact.address || 'Por confirmar / se compartirá por WhatsApp'}`,
     '',
     itemBlocks.join('\n\n')

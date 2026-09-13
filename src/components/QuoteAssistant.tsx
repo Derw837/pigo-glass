@@ -36,6 +36,7 @@ const emptyContact: ContactDraft = {
   phone: '',
   email: '',
   city: '',
+  sector: '',
   province: '',
   address: '',
   country: 'Ecuador'
@@ -60,6 +61,7 @@ function mergeContact(current: ContactDraft, next?: Partial<ContactDraft> | null
     phone: next.phone || current.phone,
     email: next.email || current.email,
     city: next.city || current.city,
+    sector: next.sector || current.sector,
     province: next.province || current.province,
     address: next.address || current.address,
     country: next.country || current.country || 'Ecuador'
@@ -215,12 +217,13 @@ export default function QuoteAssistant({ compact = false, onClose }: { compact?:
   const isEcuador = (contact.country || 'Ecuador').toLowerCase().includes('ecuador') || contact.country.toLowerCase() === 'ec'
 
   // Para solicitar una cotización preliminar NO exigimos dirección exacta.
-  // Nombre + teléfono + ciudad en Ecuador son suficientes. La dirección se puede compartir luego por WhatsApp.
+  // Nombre + teléfono + ciudad + sector en Ecuador son suficientes. La dirección exacta puede compartirse después por WhatsApp.
   const canSubmit = Boolean(
     hasProject &&
     contact.fullName.trim() &&
     contact.phone.trim() &&
     contact.city.trim() &&
+    contact.sector.trim() &&
     isEcuador
   )
 
@@ -261,7 +264,8 @@ export default function QuoteAssistant({ compact = false, onClose }: { compact?:
   function missingBeforeSend() {
     if (!hasProject) return 'Primero cuéntame qué trabajo necesitas para saber qué debemos enviar al equipo.'
     if (!contact.fullName || !contact.phone) return 'Antes de enviarlo necesito tu nombre y apellido y un número de WhatsApp o teléfono.'
-    if (!contact.city) return 'Solo me falta saber en qué ciudad de Ecuador sería el trabajo. La dirección exacta la puedes compartir después por WhatsApp.'
+    if (!contact.city) return 'Solo me falta saber en qué ciudad de Ecuador sería el trabajo.'
+    if (!contact.sector) return 'Solo me falta el sector o barrio donde sería la instalación. La dirección exacta la puedes compartir después por WhatsApp.'
     if (!isEcuador) return 'Por ahora solo atendemos instalaciones dentro de Ecuador.'
     if (addingAnother || (assessment && !assessment.readyToLead)) {
       return 'Todavía estamos completando el trabajo que estás agregando. Si cambiaste de idea, puedes decir “mejor solo el trabajo anterior”.'
@@ -587,19 +591,11 @@ export default function QuoteAssistant({ compact = false, onClose }: { compact?:
               ))}
               {busy && <div className="bubble ai typing">Analizando la información<span>•••</span></div>}
 
-              {!busy && !saved && !showSubmitActions && (assessment?.quickReplies?.length ?? 0) > 0 && (
-                <div className="assistant-quick-replies" aria-label="Respuestas sugeridas">
-                  {(assessment?.quickReplies ?? []).slice(0, 4).map(option => (
-                    <button type="button" key={option} onClick={() => send(option)}>{option}</button>
-                  ))}
-                </div>
-              )}
-
               {!saved && showSubmitActions && (
                 <div className="chat-submit-card">
                   <div>
-                    <strong>La solicitud está lista para enviar.</strong>
-                    <span>Puedes usar los botones o seguir escribiendo con normalidad: “agrega otra ventana”, “mejor solo el primero”, “incluye de nuevo la pérgola” o “enviar”.</span>
+                    <strong>Solicitud lista.</strong>
+                    <span>¿Todo correcto? Puedes enviarla o agregar otro trabajo.</span>
                   </div>
                   <div className="chat-submit-actions">
                     {assessment ? (
@@ -691,7 +687,7 @@ export default function QuoteAssistant({ compact = false, onClose }: { compact?:
                 <span>Contacto</span>
                 <strong>{confirmation.contact.fullName}</strong>
                 <p>{confirmation.contact.phone}</p>
-                <p>{confirmation.contact.city}{confirmation.contact.province ? `, ${confirmation.contact.province}` : ''}, Ecuador</p>
+                <p>{confirmation.contact.city}{confirmation.contact.sector ? ` · ${confirmation.contact.sector}` : ''}{confirmation.contact.province ? `, ${confirmation.contact.province}` : ''}, Ecuador</p>
                 <p>{confirmation.contact.address || 'Dirección exacta por compartir más adelante'}</p>
               </div>
 

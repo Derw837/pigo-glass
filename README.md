@@ -1,3 +1,7 @@
+# PIGO Studio V12
+
+> V12 hace el asesor más robusto para mensajes largos y proyectos acústicos, elimina los botones de respuestas sugeridas, solicita ciudad + sector y corrige el diseño de la tarjeta final del chat flotante. No requiere SQL nuevo.
+
 # PIGO Studio V9
 
 > V9 incorpora una portada fotográfica profesional y convierte el asesor en un chat flotante "Asesor en línea" disponible en todo el sitio público. No requiere SQL nuevo.

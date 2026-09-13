@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
   try {
     const b = await req.json()
     const c = (b.contact || {}) as ContactDraft
-    if (!c.fullName || !c.phone || !c.city) {
-      return NextResponse.json({ error: 'Faltan nombre, teléfono o ciudad de instalación.' }, { status: 400 })
+    if (!c.fullName || !c.phone || !c.city || !c.sector) {
+      return NextResponse.json({ error: 'Faltan nombre, teléfono, ciudad o sector de instalación.' }, { status: 400 })
     }
     if (!isEcuador(c.country)) {
       return NextResponse.json({ error: 'Por ahora las instalaciones se atienden únicamente en Ecuador.' }, { status: 400 })
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       phone: String(c.phone).slice(0, 60),
       email: c.email ? String(c.email).slice(0, 180) : '',
       city: String(c.city).slice(0, 100),
+      sector: String(c.sector).slice(0, 140),
       province: c.province ? String(c.province).slice(0, 100) : '',
       address: c.address ? String(c.address).slice(0, 300) : '',
       country: 'Ecuador'
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
       phone: contact.phone,
       email: contact.email || null,
       city: contact.city,
-      sector: contact.address || null,
+      sector: contact.sector || null,
       preferred_contact: 'WhatsApp',
       project_type: a.projectType || 'special',
       project_label: projectItems.length > 1 ? `${projectItems.length} trabajos` : a.projectLabel || 'Proyecto',

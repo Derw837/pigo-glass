@@ -29,11 +29,12 @@ FORMA DE HABLAR
 - Puedes iniciar con “Claro”, “Entiendo”, “Muy bien”, “Listo” o ir directo a la respuesta, pero no repitas siempre la misma palabra.
 - Evita frases burocráticas si una frase sencilla funciona mejor.
 - Haz UNA o DOS preguntas útiles por turno. No conviertas el chat en un interrogatorio.
+- Mantén cada respuesta corta: normalmente 2 a 5 frases. Solo amplía si el cliente pide una explicación técnica.
+- No vuelvas a resumir todo el proyecto en cada turno; confirma solo lo nuevo y continúa con la siguiente pregunta útil.
 - NO repitas datos que el cliente ya dio, salvo una confirmación breve cuando sea útil.
 - Mantén el hilo aunque responda “negro”, “CEDAL”, “6 mm”, “incluye todo”, “sí”, “no”, “¿cuánto sale?”.
 - Si el cliente elige algo distinto de tu recomendación, registra su elección. Si existe una consideración real de seguridad, menciónala una sola vez y deja la decisión técnica final al equipo.
 - No repitas advertencias de visita, apoyos o seguridad en todos los mensajes.
-- Cuando tu pregunta tenga 2 a 4 respuestas cortas y claras, llena quickReplies con esas opciones para que la interfaz muestre atajos. Son opcionales: el cliente siempre puede escribir otra cosa. Si la pregunta es abierta, usa quickReplies=[].
 - Tu objetivo comercial es dejar una ficha cotizable, no solo entender la idea. Cuando el trabajo lo permita, pregunta de forma progresiva por sistema/perfilería, color, vidrio (tipo/color/espesor o prestación), y herraje si afecta el precio.
 - Si el cliente no conoce términos técnicos, NO le preguntes “¿qué serie quiere?” sin explicar. Di algo como: “¿Buscas una opción más económica, una estándar o un sistema europeo con mejor sellado y herrajes?” y luego traduce su respuesta al campo correspondiente.
 - Si el cliente pide “lo mejor”, “que no entre ruido”, “que selle mejor”, “algo elegante” o “algo económico”, usa esa prioridad para recomendar el sistema; no lo obligues a elegir a ciegas.
@@ -55,6 +56,13 @@ readyToLead=true significa que el trabajo ACTUAL ya tiene suficiente informació
 - Barandas/pasamanos: recorrido/medidas aproximadas, estilo de sujeción preferido si se conoce y descripción suficiente; los detalles de anclaje pueden quedar para revisión técnica.
 - Proyecto especial: descripción clara y, cuando sea posible, medidas o foto de referencia. No interrogues indefinidamente si el equipo ya puede entender qué quiere el cliente.
 - Si faltan datos opcionales que un técnico puede confirmar después, eso NO debe impedir readyToLead=true.
+
+CASOS DE RUIDO / MEJORA ACÚSTICA
+- Si el cliente dice que entra mucho ruido pero NO sabe por dónde, NO lo obligues a escoger de inmediato vidrio, serie, marca o herrajes. Primero entiende cuántas ventanas/puertas dan hacia la fuente de ruido y, si conoce medidas, regístralas.
+- Si describe varias ventanas y una puerta en un mismo mensaje, NO falles ni intentes meter todas las medidas en widthM/heightM. Trátalo como un solo proyecto de diagnóstico/mejora acústica y guarda cada abertura claramente en providedData y clientRequestSummary.
+- Si el cliente no sabe si conviene conservar o reemplazar las ventanas existentes, recomienda revisión técnica para detectar entradas de ruido, revisar marcos, cierres, juntas, sellos y puerta. En ese punto readyToLead puede ser true aunque todavía no se haya elegido una serie exacta.
+- Cuando el equipo deba diagnosticar primero, projectLabel puede ser “Evaluación acústica de ventanas y puerta” y quoteMode='technical'. No inventes una cotización automática antes de la revisión.
+- Después de acordar la revisión, toma nombre, WhatsApp, ciudad y sector. No pidas dirección exacta como requisito para enviar la solicitud.
 
 ALUMINIO, SISTEMA Y HERRAJES
 - CEDAL: opción principal dentro del catálogo de la empresa; es aluminio fabricado en Ecuador y tiene sistemas convencionales y sistemas de concepto europeo.
@@ -118,12 +126,12 @@ PRECIOS
 DATOS DEL CLIENTE DENTRO DEL CHAT
 Cuando ya entiendas el trabajo, toma los datos sin mostrar ni mencionar un formulario externo.
 1. Pide nombre y apellido + WhatsApp/teléfono si todavía no los conoces.
-2. Luego pide la ciudad dentro de Ecuador si todavía no la conoces.
+2. Luego pide ciudad Y sector/barrio dentro de Ecuador si todavía no los conoces. Puedes pedir ambos en una sola frase.
 3. La dirección exacta NO es obligatoria para enviar una solicitud preliminar. Si la da, guárdala. Si la dará después, acepta sin insistir.
 4. Correo opcional.
 5. Conserva los datos confirmados; no los borres en turnos posteriores.
-6. readyToSubmit=true solo cuando readyToLead=true Y ya existen nombre, teléfono y ciudad en Ecuador.
-7. Cuando llegues a ese punto, dilo brevemente: “Ya tengo lo necesario. Puedes enviarlo cuando quieras.” La interfaz mostrará los botones.
+6. readyToSubmit=true solo cuando readyToLead=true Y ya existen nombre, teléfono, ciudad y sector/barrio en Ecuador.
+7. Cuando llegues a ese punto, dilo brevemente: “Ya tengo lo necesario. Puedes enviarlo cuando quieras.” La interfaz mostrará las acciones para enviar o agregar otro trabajo.
 8. NUNCA digas que la solicitud fue enviada o recibida. Solo la interfaz puede confirmarlo después de guardar en Supabase.
 
 RESUMEN INTERNO PARA EL EQUIPO
@@ -148,11 +156,12 @@ const contactSchema = {
     phone: { type: 'string' },
     email: { type: 'string' },
     city: { type: 'string' },
+    sector: { type: 'string' },
     province: { type: 'string' },
     address: { type: 'string' },
     country: { type: 'string' }
   },
-  required: ['fullName', 'phone', 'email', 'city', 'province', 'address', 'country']
+  required: ['fullName', 'phone', 'email', 'city', 'sector', 'province', 'address', 'country']
 }
 
 const schema = {
@@ -184,7 +193,6 @@ const schema = {
     recommendationReason: { type: 'string' },
     technicalNotes: { type: 'array', items: { type: 'string' } },
     nextStep: { type: 'string' },
-    quickReplies: { type: 'array', items: { type: 'string' }, maxItems: 4 },
     aluminumBrand: { type: 'string', enum: ['cedal', 'andesia', 'other', 'unknown'] },
     aluminumOrigin: { type: 'string', enum: ['national','imported','mixed','unknown'] },
     aluminumSystem: { type: 'string' },
@@ -201,7 +209,7 @@ const schema = {
     readyToSubmit: { type: 'boolean' }
   },
   required: [
-    'scope','reply','projectType','projectLabel','quoteMode','supplyMode','widthM','heightM','lengthM','quantity','existingStructure','riskLevel','needsVisit','missing','detectedNeeds','readyToLead','confidence','clientRequestSummary','providedData','recommendedSolution','recommendedGlass','glassAlternatives','recommendationReason','technicalNotes','nextStep','quickReplies','aluminumBrand','aluminumOrigin','aluminumSystem','aluminumTier','aluminumColor','hardwareOrigin','hardwareTier','glassType','glassColor','glassFeature','glassThicknessMm','contact','conversationStage','readyToSubmit'
+    'scope','reply','projectType','projectLabel','quoteMode','supplyMode','widthM','heightM','lengthM','quantity','existingStructure','riskLevel','needsVisit','missing','detectedNeeds','readyToLead','confidence','clientRequestSummary','providedData','recommendedSolution','recommendedGlass','glassAlternatives','recommendationReason','technicalNotes','nextStep','aluminumBrand','aluminumOrigin','aluminumSystem','aluminumTier','aluminumColor','hardwareOrigin','hardwareTier','glassType','glassColor','glassFeature','glassThicknessMm','contact','conversationStage','readyToSubmit'
   ]
 }
 
@@ -234,6 +242,7 @@ function mergeContact(previous: Partial<ContactDraft> | undefined, next: Partial
     phone: pick('phone'),
     email: pick('email'),
     city: pick('city'),
+    sector: pick('sector'),
     province: pick('province'),
     address: pick('address'),
     country: pick('country') || 'Ecuador'
@@ -270,7 +279,7 @@ function isEcuador(contact: ContactDraft) {
 }
 
 function contactComplete(contact: ContactDraft) {
-  return Boolean(contact.fullName && contact.phone && contact.city && isEcuador(contact))
+  return Boolean(contact.fullName && contact.phone && contact.city && contact.sector && isEcuador(contact))
 }
 
 
@@ -393,16 +402,36 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const response = await openai.responses.create({
+    const requestAssessment = (maxOutputTokens: number) => openai.responses.create({
       model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
       input,
-      text: { format: { type: 'json_schema', name: 'pigo_glass_assessment_v11', strict: true, schema } } as any,
-      max_output_tokens: 1450,
+      text: { format: { type: 'json_schema', name: 'pigo_glass_assessment_v12', strict: true, schema } } as any,
+      max_output_tokens: maxOutputTokens,
       store: false,
-      prompt_cache_key: 'pigo-glass-advisor-v11'
+      prompt_cache_key: 'pigo-glass-advisor-v12'
     } as any)
 
-    let assessment = JSON.parse(response.output_text) as Assessment
+    // Los mensajes largos (por ejemplo, varias ventanas + puerta en un solo texto)
+    // pueden necesitar más salida estructurada. Reintentamos una sola vez solo si
+    // la respuesta quedó incompleta o no pudo convertirse al JSON estricto.
+    let response: any
+    try {
+      response = await requestAssessment(2100)
+    } catch (firstError) {
+      console.warn('[PIGO assistant] Primer intento OpenAI falló; reintentando una vez.', firstError)
+      response = await requestAssessment(2800)
+    }
+
+    let assessment: Assessment
+    try {
+      if (!response?.output_text || response?.status === 'incomplete') throw new Error('Respuesta estructurada incompleta')
+      assessment = JSON.parse(response.output_text) as Assessment
+    } catch (parseError) {
+      console.warn('[PIGO assistant] Respuesta incompleta/no parseable; reintentando con más margen.', parseError)
+      response = await requestAssessment(2800)
+      if (!response?.output_text) throw new Error('OpenAI no devolvió una evaluación estructurada')
+      assessment = JSON.parse(response.output_text) as Assessment
+    }
     assessment = mergeAssessment(previousAssessment || undefined, assessment)
     assessment.contact = mergeContact(previousContact, assessment.contact)
 

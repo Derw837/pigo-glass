@@ -12,6 +12,7 @@ export type ContactDraft = {
   phone: string
   email: string
   city: string
+  sector: string
   province: string
   address: string
   country: string
@@ -43,8 +44,6 @@ export type Assessment = {
   recommendationReason: string
   technicalNotes: string[]
   nextStep: string
-  quickReplies: string[]
-
   aluminumBrand: 'cedal' | 'andesia' | 'other' | 'unknown'
   aluminumOrigin: 'national' | 'imported' | 'mixed' | 'unknown'
   aluminumSystem: string
